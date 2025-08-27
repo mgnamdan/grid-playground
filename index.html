@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Grid Playground</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <h1>CSS Grid Playground</h1>
+    <p>Tweak the controls to see Grid layout change in real time.</p>
+  </header>
+
+  <main class="layout">
+    <!-- Container Controls -->
+    <section class="panel" aria-labelledby="container-controls">
+      <h2 id="container-controls">Container Controls</h2>
+
+      <div class="grid">
+        <label>
+          Columns (repeat)
+          <input id="cols" type="range" min="1" max="8" value="4" />
+          <small><span id="colsVal">4</span> columns</small>
+        </label>
+
+        <label>
+          Column Min (px)
+          <input id="colMin" type="number" min="0" value="140" />
+        </label>
+
+        <label>
+          Row Auto Height Min (px)
+          <input id="rowMin" type="number" min="0" value="80" />
+        </label>
+
+        <label>
+          Gap (<span id="gapVal">12</span>px)
+          <input id="gap" type="range" min="0" max="48" value="12" />
+        </label>
+
+        <label>
+          Justify Items
+          <select id="justifyItems">
+            <option>stretch</option>
+            <option>start</option>
+            <option>end</option>
+            <option selected>center</option>
+          </select>
+        </label>
+
+        <label>
+          Align Items
+          <select id="alignItems">
+            <option>stretch</option>
+            <option>start</option>
+            <option>end</option>
+            <option selected>center</option>
+          </select>
+        </label>
+
+        <label>
+          Justify Content
+          <select id="justifyContent">
+            <option>start</option>
+            <option>end</option>
+            <option selected>center</option>
+            <option>space-between</option>
+            <option>space-around</option>
+            <option>space-evenly</option>
+          </select>
+        </label>
+
+        <label>
+          Align Content
+          <select id="alignContent">
+            <option>start</option>
+            <option>end</option>
+            <option selected>center</option>
+            <option>space-between</option>
+            <option>space-around</option>
+            <option>space-evenly</option>
+            <option>stretch</option>
+          </select>
+        </label>
+
+        <label>
+          Auto-Flow
+          <select id="autoFlow">
+            <option selected>row</option>
+            <option>column</option>
+          </select>
+        </label>
+
+        <label class="checkbox">
+          <input id="dense" type="checkbox" />
+          <span>Use <code>dense</code> packing</span>
+        </label>
+
+        <label>
+          # Items (3–12)
+          <input id="itemCount" type="range" min="3" max="12" value="8" />
+        </label>
+      </div>
+
+      <div class="buttons">
+        <button id="shuffle">Shuffle Colors / Sizes</button>
+        <button id="reset">Reset</button>
+      </div>
+    </section>
+
+    <!-- Item Controls -->
+    <section class="panel" aria-labelledby="item-controls">
+      <h2 id="item-controls">Selected Item Controls</h2>
+
+      <div class="grid">
+        <label>
+          Select Item
+          <select id="selectedItem"></select>
+        </label>
+
+        <label>
+          Column Start (number or <code>auto</code>)
+          <input id="colStart" type="text" value="auto" />
+        </label>
+
+        <label>
+          Column Span
+          <input id="colSpan" type="number" min="1" value="1" />
+        </label>
+
+        <label>
+          Row Start (number or <code>auto</code>)
+          <input id="rowStart" type="text" value="auto" />
+        </label>
+
+        <label>
+          Row Span
+          <input id="rowSpan" type="number" min="1" value="1" />
+        </label>
+
+        <label>
+          Justify Self
+          <select id="justifySelf">
+            <option>auto</option>
+            <option>stretch</option>
+            <option>start</option>
+            <option>end</option>
+            <option selected>center</option>
+          </select>
+        </label>
+
+        <label>
+          Align Self
+          <select id="alignSelf">
+            <option>auto</option>
+            <option>stretch</option>
+            <option>start</option>
+            <option>end</option>
+            <option selected>center</option>
+          </select>
+        </label>
+      </div>
+    </section>
+
+    <!-- Preview -->
+    <section class="panel" aria-labelledby="preview">
+      <h2 id="preview">Preview</h2>
+
+      <div class="legend">
+        <span class="badge">Columns</span> are built with
+        <code>grid-template-columns: repeat(n, minmax(MINpx, 1fr))</code>.
+        Rows use <code>grid-auto-rows: minmax(MINpx, auto)</code>.
+      </div>
+
+      <div id="grid" class="grid-container" aria-live="polite" aria-label="Grid preview">
+        <!-- Items inserted by JS -->
+      </div>
+
+      <details class="codeview">
+        <summary>Show current container CSS</summary>
+        <pre id="cssPreview" class="code"></pre>
+      </details>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>
+      Tip: Combine explicit placement (<code>grid-column</code>, <code>grid-row</code>)
+      with auto-flow for powerful, responsive layouts.
+    </p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
