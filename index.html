@@ -101,6 +101,19 @@
           # Items (3–12)
           <input id="itemCount" type="range" min="3" max="12" value="8" />
         </label>
+
+        <label>
+          Track Sizing
+          <select id="trackSizing">
+            <option value="fill" selected>Fill (1fr)</option>
+            <option value="fit">Fit (auto)</option>
+          </select>
+        </label>
+
+        <label>
+          Container Width (<span id="cwVal">100</span>%)
+          <input id="containerWidth" type="range" min="60" max="100" value="100" />
+        </label>
       </div>
 
       <div class="buttons">
@@ -142,22 +155,22 @@
         <label>
           Justify Self
           <select id="justifySelf">
-            <option>auto</option>
+            <option selected>auto</option>
             <option>stretch</option>
             <option>start</option>
             <option>end</option>
-            <option selected>center</option>
+            <option>center</option>
           </select>
         </label>
 
         <label>
           Align Self
           <select id="alignSelf">
-            <option>auto</option>
+            <option selected>auto</option>
             <option>stretch</option>
             <option>start</option>
             <option>end</option>
-            <option selected>center</option>
+            <option>center</option>
           </select>
         </label>
       </div>

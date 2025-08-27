@@ -19,6 +19,9 @@ const controls = {
   autoFlow: $("#autoFlow"),
   dense: $("#dense"),
   itemCount: $("#itemCount"),
+  trackSizing: $("#trackSizing"),              // NEW
+  containerWidth: $("#containerWidth"),        // NEW
+  cwVal: $("#cwVal"),                          // NEW
   shuffle: $("#shuffle"),
   reset: $("#reset")
 };
@@ -45,15 +48,17 @@ const DEFAULTS = {
     alignContent: "center",
     autoFlow: "row",
     dense: false,
-    itemCount: 8
+    itemCount: 8,
+    trackSizing: "fill",    // "fill" => 1fr, "fit" => auto
+    containerWidth: 100
   },
   item: {
     colStart: "auto",
     colSpan: 1,
     rowStart: "auto",
     rowSpan: 1,
-    justifySelf: "center",
-    alignSelf: "center"
+    justifySelf: "auto",    // inherit container
+    alignSelf: "auto"       // inherit container
   }
 };
 
@@ -70,23 +75,31 @@ function createItem(i){
 }
 
 function setItemPlacement(el, { colStart, colSpan, rowStart, rowSpan, justifySelf, alignSelf }){
-  // grid-column: <start> / span <n>
-  const colStartVal = (colStart + "").trim();
-  const rowStartVal = (rowStart + "").trim();
+  const colStartVal = (colStart + "").trim() || "auto";
+  const rowStartVal = (rowStart + "").trim() || "auto";
 
-  el.style.gridColumn = `${colStartVal || "auto"} / span ${Number(colSpan) || 1}`;
-  el.style.gridRow = `${rowStartVal || "auto"} / span ${Number(rowSpan) || 1}`;
+  el.style.gridColumn = `${colStartVal} / span ${Math.max(1, Number(colSpan) || 1)}`;
+  el.style.gridRow = `${rowStartVal} / span ${Math.max(1, Number(rowSpan) || 1)}`;
 
-  el.style.justifySelf = justifySelf;
-  el.style.alignSelf = alignSelf;
+  // Only write inline self-alignment when it overrides container alignment
+  if (justifySelf && justifySelf !== "auto") {
+    el.style.justifySelf = justifySelf;
+  } else {
+    el.style.removeProperty("justify-self");
+  }
+  if (alignSelf && alignSelf !== "auto") {
+    el.style.alignSelf = alignSelf;
+  } else {
+    el.style.removeProperty("align-self");
+  }
 
-  // keep state
-  el.dataset.colStart = colStartVal || "auto";
-  el.dataset.colSpan = Number(colSpan) || 1;
-  el.dataset.rowStart = rowStartVal || "auto";
-  el.dataset.rowSpan = Number(rowSpan) || 1;
-  el.dataset.justifySelf = justifySelf;
-  el.dataset.alignSelf = alignSelf;
+  // keep state for UI sync
+  el.dataset.colStart = colStartVal;
+  el.dataset.colSpan = Math.max(1, Number(colSpan) || 1);
+  el.dataset.rowStart = rowStartVal;
+  el.dataset.rowSpan = Math.max(1, Number(rowSpan) || 1);
+  el.dataset.justifySelf = justifySelf || "auto";
+  el.dataset.alignSelf = alignSelf || "auto";
 }
 
 function populateItemSelect(){
@@ -108,7 +121,6 @@ function getSelectedItem(){
 function syncSelectedItemControls(){
   const el = getSelectedItem();
   if(!el) return;
-
   itemCtrls.colStart.value = el.dataset.colStart ?? DEFAULTS.item.colStart;
   itemCtrls.colSpan.value = Number(el.dataset.colSpan ?? DEFAULTS.item.colSpan);
   itemCtrls.rowStart.value = el.dataset.rowStart ?? DEFAULTS.item.rowStart;
@@ -123,12 +135,13 @@ function applyContainerStyles(){
   const colMin = Math.max(0, Number(controls.colMin.value));
   const rowMin = Math.max(0, Number(controls.rowMin.value));
   const gap = Number(controls.gap.value);
-
   const dense = controls.dense.checked;
   const flow = controls.autoFlow.value + (dense ? " dense" : "");
+  const sizingMode = controls.trackSizing.value; // "fill" or "fit"
+  const fillKeyword = sizingMode === "fill" ? "1fr" : "auto";
 
-  // Build core grid CSS
-  grid.style.gridTemplateColumns = `repeat(${cols}, minmax(${colMin}px, 1fr))`;
+  // Core grid CSS
+  grid.style.gridTemplateColumns = `repeat(${cols}, minmax(${colMin}px, ${fillKeyword}))`;
   grid.style.gridAutoRows = `minmax(${rowMin}px, auto)`;
   grid.style.gap = `${gap}px`;
 
@@ -140,9 +153,14 @@ function applyContainerStyles(){
 
   grid.style.gridAutoFlow = flow;
 
+  // Width control (to help visualize justify-content)
+  const widthPct = Number(controls.containerWidth.value);
+  grid.style.width = `${widthPct}%`;
+
   // live labels
   controls.colsVal.textContent = cols;
   controls.gapVal.textContent = gap;
+  controls.cwVal.textContent = widthPct;
 
   updateCSSPreview();
 }
@@ -159,9 +177,12 @@ function syncContainerControls(){
   controls.autoFlow.value = DEFAULTS.container.autoFlow;
   controls.dense.checked = DEFAULTS.container.dense;
   controls.itemCount.value = DEFAULTS.container.itemCount;
+  controls.trackSizing.value = DEFAULTS.container.trackSizing;     // NEW
+  controls.containerWidth.value = DEFAULTS.container.containerWidth; // NEW
 
   controls.colsVal.textContent = DEFAULTS.container.cols;
   controls.gapVal.textContent = DEFAULTS.container.gap;
+  controls.cwVal.textContent = DEFAULTS.container.containerWidth;
 }
 
 /* ===== Items mount ===== */
@@ -177,7 +198,7 @@ function mountItems(n){
 
 /* ===== UI events ===== */
 ["change","input"].forEach(evt => {
-  ["cols","colMin","rowMin","gap","justifyItems","alignItems","justifyContent","alignContent","autoFlow","dense"]
+  ["cols","colMin","rowMin","gap","justifyItems","alignItems","justifyContent","alignContent","autoFlow","dense","trackSizing","containerWidth"]
     .forEach(k => controls[k].addEventListener(evt, applyContainerStyles));
 
   ["colStart","colSpan","rowStart","rowSpan","justifySelf","alignSelf"]
@@ -192,30 +213,25 @@ controls.itemCount.addEventListener("input", e => {
 itemCtrls.selectedItem.addEventListener("change", syncSelectedItemControls);
 
 controls.shuffle.addEventListener("click", () => {
-  // randomize hues and optionally give a few items bigger spans
   const items = $$(".item", grid);
   items.forEach(el => {
     const hue = palette[Math.floor(Math.random()*palette.length)];
     el.style.setProperty("--h", hue);
 
-    // 30% chance to span extra columns/rows (within bounds)
+    // occasional playful spans (respect current columns)
     if (Math.random() < 0.3){
       const maxCols = Number(controls.cols.value);
-      const spanC = Math.min( Math.ceil(Math.random()*2)+0, maxCols ); // up to 3
-      const spanR = Math.min( Math.ceil(Math.random()*2)+0, 3 );       // up to 3
-
-      const startC = "auto";
-      const startR = "auto";
+      const spanC = Math.min(1 + Math.ceil(Math.random()*2), maxCols); // up to 3
+      const spanR = Math.min(1 + Math.ceil(Math.random()*2), 3);       // up to 3
       setItemPlacement(el, {
-        colStart: startC,
+        colStart: "auto",
         colSpan: spanC,
-        rowStart: startR,
+        rowStart: "auto",
         rowSpan: spanR,
         justifySelf: el.dataset.justifySelf || DEFAULTS.item.justifySelf,
         alignSelf: el.dataset.alignSelf || DEFAULTS.item.alignSelf
       });
     } else {
-      // reset to default spans, preserve self alignment
       setItemPlacement(el, {
         colStart: "auto",
         colSpan: 1,
@@ -240,7 +256,6 @@ function applySelectedItemStyles(){
   const el = getSelectedItem();
   if(!el) return;
 
-  // sanitize inputs
   const colStart = itemCtrls.colStart.value.trim() || "auto";
   const colSpan = Math.max(1, Number(itemCtrls.colSpan.value || 1));
   const rowStart = itemCtrls.rowStart.value.trim() || "auto";
@@ -257,6 +272,7 @@ function updateCSSPreview(){
   const s = getComputedStyle(grid);
   const rules = [
     ["display", "grid"],
+    ["width", s.width],
     ["grid-template-columns", s.gridTemplateColumns],
     ["grid-auto-rows", s.gridAutoRows],
     ["gap", s.gap],
@@ -274,7 +290,6 @@ function updateCSSPreview(){
 `}`
   ];
 
-  // Show selected item overrides
   const el = getSelectedItem();
   if(el){
     const itemRules = [];
